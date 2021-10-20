@@ -21,6 +21,9 @@ public class SecurityCsrfConfigProperty {
     @Value("${app.security.csrf.origin.write-list:}")
     protected  String[] originWriteList;
 
+    @Value("${app.security.csrf.host.white-list:}")
+    protected  String[] hostWhiteList;
+
     public String[] getRefererIgnorePath() {
         return refererIgnorePath;
     }
@@ -51,5 +54,13 @@ public class SecurityCsrfConfigProperty {
 
     public void setOriginWriteList(String[] pOriginWriteList) {
         originWriteList = pOriginWriteList;
+    }
+
+    public String[] getHostWhiteList() {
+        return hostWhiteList;
+    }
+
+    public void setHostWhiteList(String[] pHostWhiteList) {
+        hostWhiteList = pHostWhiteList;
     }
 }
