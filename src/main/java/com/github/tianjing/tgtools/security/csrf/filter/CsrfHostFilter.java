@@ -15,13 +15,13 @@ public class CsrfHostFilter extends CsrfRefererFilter {
 
     public CsrfHostFilter(SecurityCsrfConfigProperty pSecurityCsrfConfigProperty) {
         super(pSecurityCsrfConfigProperty);
-        ignoringAntPathMatcher = antMatchers(pSecurityCsrfConfigProperty.getOriginIgnorePath());
+        ignoringAntPathMatcher = antMatchers(pSecurityCsrfConfigProperty.getHostWhiteList());
     }
 
 
     public CsrfHostFilter(SecurityCsrfConfigProperty pSecurityCsrfConfigProperty, boolean pUseMinRequiresCsrfMatcher) {
         super(pSecurityCsrfConfigProperty, pUseMinRequiresCsrfMatcher);
-        ignoringAntPathMatcher = antMatchers(securityCsrfConfigProperty.getOriginIgnorePath());
+        ignoringAntPathMatcher = antMatchers(securityCsrfConfigProperty.getHostWhiteList());
         if (pUseMinRequiresCsrfMatcher) {
             requireCsrfProtectionMatcher = new MinRequiresCsrfMatcher();
         }
@@ -30,6 +30,10 @@ public class CsrfHostFilter extends CsrfRefererFilter {
     @Override
     protected String getValidHeader() {
         return "Host";
+    }
+    @Override
+    protected String getErrorMessage() {
+        return "不安全的请求H 检测不通过，非本站请求无法处理！";
     }
 
     @Override

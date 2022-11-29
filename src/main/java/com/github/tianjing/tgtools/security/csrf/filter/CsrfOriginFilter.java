@@ -26,6 +26,10 @@ public class CsrfOriginFilter extends CsrfRefererFilter {
             requireCsrfProtectionMatcher = new MinRequiresCsrfMatcher();
         }
     }
+    @Override
+    protected String getErrorMessage() {
+        return "不安全的请求O 检测不通过，非本站请求无法处理！";
+    }
 
     @Override
     protected String getValidHeader() {

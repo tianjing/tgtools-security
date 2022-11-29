@@ -7,6 +7,7 @@ import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.csrf.CsrfException;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
+import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 import tgtools.util.StringUtil;
 
@@ -49,10 +50,18 @@ public class CsrfRefererFilter extends OncePerRequestFilter {
     protected String getValidHeader() {
         return "Referer";
     }
+    protected String getErrorMessage() {
+        return "不安全的请求C 检测不通过，非本站请求无法处理！";
+    }
 
 
     protected List<RequestMatcher> antMatchers(String... antPatterns) {
         List<RequestMatcher> matchers = new ArrayList<>();
+
+        if (StringUtils.isEmpty(antPatterns)) {
+            return matchers;
+        }
+
         for (String pattern : antPatterns) {
             matchers.add(new AntPathRequestMatcher(pattern, null));
         }
@@ -85,7 +94,7 @@ public class CsrfRefererFilter extends OncePerRequestFilter {
             return;
         }
         this.accessDeniedHandler.handle(pRequest, pResponse,
-                new ErrorRefererException("不安全的请求C 检测不通过，非本站请求无法处理！"));
+                new ErrorRefererException(getErrorMessage()));
 
     }
 

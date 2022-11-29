@@ -1,5 +1,6 @@
 package com.github.tianjing.tgtools.security.util.wrapper;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.util.MimeTypeUtils;
 import tgtools.util.StringUtil;
 
@@ -27,6 +28,13 @@ public class JsonHttpServletRequestWrapper extends HttpServletRequestWrapper {
      */
     public JsonHttpServletRequestWrapper(HttpServletRequest request) {
         super(request);
+    }
+
+    public JsonNode getRequestJsonNode() throws IOException {
+        if (StringUtil.isNullOrEmpty(requestJsonBody)) {
+            this.getInputStream();
+        }
+        return tgtools.util.JsonParseHelper.getMapper(false).readTree(requestJsonBody);
     }
 
     public String getRequestJsonBody() throws IOException {

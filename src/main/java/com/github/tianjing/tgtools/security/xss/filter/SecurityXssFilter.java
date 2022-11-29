@@ -1,17 +1,17 @@
 package com.github.tianjing.tgtools.security.xss.filter;
 
 
-import com.github.tianjing.tgtools.security.util.handler.NotAcceptableAccessDeniedHandlerImpl;
+import com.github.tianjing.tgtools.security.sql.filter.SqlInjectionFilter;
 import com.github.tianjing.tgtools.security.util.matcher.DataRequiresMatcher;
 import com.github.tianjing.tgtools.security.util.wrapper.JsonHttpServletRequestWrapper;
 import com.github.tianjing.tgtools.security.xss.bean.SecurityXssConfigProperty;
-import com.github.tianjing.tgtools.security.xss.util.XssHelper;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.web.access.AccessDeniedHandler;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.util.MimeTypeUtils;
+import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
+import tgtools.util.StringUtil;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -20,6 +20,8 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 
 /**
  * Xss 验证 过滤器
@@ -30,21 +32,28 @@ import java.util.List;
  * @desc
  **/
 public class SecurityXssFilter extends OncePerRequestFilter {
-    private AccessDeniedHandler accessDeniedHandler = new NotAcceptableAccessDeniedHandlerImpl();
+
     private RequestMatcher requireCsrfProtectionMatcher = new DataRequiresMatcher();
     private List<RequestMatcher> ignoringAntPathMatcher;
     private SecurityXssConfigProperty securityXssConfigProperty;
 
+    @Autowired(required = false)
+    protected SecurityXssFilterProcess securityXssFilterProcess;
+
     public SecurityXssFilter(SecurityXssConfigProperty pSecurityXssConfigProperty) {
         securityXssConfigProperty = pSecurityXssConfigProperty;
         ignoringAntPathMatcher = antMatchers(pSecurityXssConfigProperty.getIgnorePath());
-
     }
+
+    protected String getErrorMessage() {
+        return "不安全的请求X 检测不通过，非本站请求无法处理！";
+    }
+
 
     protected List<RequestMatcher> antMatchers(String... antPatterns) {
         List<RequestMatcher> matchers = new ArrayList<>();
 
-        if (null != securityXssConfigProperty.getIgnorePath() && securityXssConfigProperty.getIgnorePath().length > 0) {
+        if (StringUtils.isEmpty(antPatterns)) {
             return matchers;
         }
 
@@ -56,6 +65,9 @@ public class SecurityXssFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest pRequest, HttpServletResponse pResponse, FilterChain pFilterChain) throws ServletException, IOException {
+        if (Objects.isNull(securityXssFilterProcess)) {
+            securityXssFilterProcess = new DefaultSecurityXssFilterProcess();
+        }
         //请求方法
         if (!this.requireCsrfProtectionMatcher.matches(pRequest)) {
             pFilterChain.doFilter(pRequest, pResponse);
@@ -79,22 +91,44 @@ public class SecurityXssFilter extends OncePerRequestFilter {
         }
 
 
-        try {
-            if (pRequest.getContentType().contains(MimeTypeUtils.APPLICATION_JSON_VALUE)) {
+        if (pRequest.getContentType().contains(MimeTypeUtils.APPLICATION_JSON_VALUE)) {
+            if(!(pRequest instanceof JsonHttpServletRequestWrapper)) {
                 pRequest = new JsonHttpServletRequestWrapper(pRequest);
-                String vContent = ((JsonHttpServletRequestWrapper) pRequest).getRequestJsonBody();
-                if (XssHelper.matchXssContent(vContent)) {
-                    this.accessDeniedHandler.handle(pRequest, pResponse,
-                            new AccessDeniedException("不安全的请求X 检测不通过，非本站请求无法处理！"));
-                    return;
-                }
             }
-        } catch (Exception e) {
-
+            String vContent = ((JsonHttpServletRequestWrapper) pRequest).getRequestJsonBody();
+            validContent(vContent, pRequest, pResponse);
+        } else if (pRequest.getContentType().contains("application/x-www-form-urlencoded")) {
+            validUrlEncoded(pRequest, pResponse);
         }
 
         pFilterChain.doFilter(pRequest, pResponse);
         return;
 
     }
+
+    protected void validUrlEncoded(HttpServletRequest pRequest, HttpServletResponse pResponse) throws ServletException, IOException {
+        Map<String, String[]> vParameterMap = pRequest.getParameterMap();
+        if (Objects.isNull(vParameterMap) || vParameterMap.size() < 1) {
+            return;
+        }
+
+        for (Map.Entry<String, String[]> vItem : vParameterMap.entrySet()) {
+            if (Objects.isNull(vItem.getValue()) || vItem.getValue().length < 1) {
+                continue;
+            }
+
+            for (String vValue : vItem.getValue()) {
+                validContent(vValue, pRequest, pResponse);
+            }
+        }
+
+    }
+
+    protected void validContent(String pContent, HttpServletRequest pRequest, HttpServletResponse pResponse) throws ServletException, IOException {
+        if (!this.securityXssFilterProcess.validTextFiledContent(pContent)) {
+            this.securityXssFilterProcess.getAccessDeniedHandler().handle(pRequest, pResponse,
+                    new SqlInjectionFilter.ErrorRefererException(getErrorMessage()));
+        }
+    }
+
 }
