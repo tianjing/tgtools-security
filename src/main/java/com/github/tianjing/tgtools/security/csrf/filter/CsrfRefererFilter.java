@@ -109,12 +109,12 @@ public class CsrfRefererFilter extends OncePerRequestFilter {
             return false;
         }
         //默认按请求的ip / ServerName 对比
-        if (null == securityCsrfConfigProperty.getOriginIgnorePath() || securityCsrfConfigProperty.getOriginWriteList().length < 1) {
+        if (null == securityCsrfConfigProperty.getOriginIgnorePath() || securityCsrfConfigProperty.getOriginWhiteList().length < 1) {
             return (vReferer != null) && (vReferer.trim().startsWith("https://" + pRequest.getServerName()) || vReferer.trim().startsWith("http://" + pRequest.getServerName()));
         }
         //白名单对比
         else {
-            for (String vItem : securityCsrfConfigProperty.getOriginWriteList()) {
+            for (String vItem : securityCsrfConfigProperty.getOriginWhiteList()) {
                 if (StringUtil.equals(vItem, pRequest.getServerName())) {
                     return true;
                 }

@@ -12,14 +12,14 @@ public class SecurityCsrfConfigProperty {
     @Value("${app.security.csrf.ignore-path:}")
     protected  String[] refererIgnorePath;
 
-    @Value("${app.security.csrf.write-list:}")
-    protected  String[] refererWriteList;
+    @Value("${app.security.csrf.white-list:}")
+    protected  String[] refererWhiteList;
 
     @Value("${app.security.csrf.origin.ignore-path:}")
     protected  String[] originIgnorePath;
 
-    @Value("${app.security.csrf.origin.write-list:}")
-    protected  String[] originWriteList;
+    @Value("${app.security.csrf.origin.white-list:}")
+    protected  String[] originWhiteList;
 
     @Value("${app.security.csrf.host.white-list:}")
     protected  String[] hostWhiteList;
@@ -32,12 +32,12 @@ public class SecurityCsrfConfigProperty {
         refererIgnorePath = pRefererIgnorePath;
     }
 
-    public String[] getRefererWriteList() {
-        return refererWriteList;
+    public String[] getRefererWhiteList() {
+        return refererWhiteList;
     }
 
-    public void setRefererWriteList(String[] pRefererWriteList) {
-        refererWriteList = pRefererWriteList;
+    public void setRefererWriteList(String[] pRefererWhiteList) {
+        refererWhiteList = pRefererWhiteList;
     }
 
     public String[] getOriginIgnorePath() {
@@ -48,12 +48,12 @@ public class SecurityCsrfConfigProperty {
         originIgnorePath = pOriginIgnorePath;
     }
 
-    public String[] getOriginWriteList() {
-        return originWriteList;
+    public String[] getOriginWhiteList() {
+        return originWhiteList;
     }
 
-    public void setOriginWriteList(String[] pOriginWriteList) {
-        originWriteList = pOriginWriteList;
+    public void setOriginWhiteList(String[] pOriginWriteList) {
+        originWhiteList = pOriginWriteList;
     }
 
     public String[] getHostWhiteList() {
