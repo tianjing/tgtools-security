@@ -49,13 +49,13 @@ public class CsrfOriginFilter extends CsrfRefererFilter {
         }
 
         //默认按请求的ip / ServerName 对比
-        if (null == securityCsrfConfigProperty.getOriginIgnorePath() || securityCsrfConfigProperty.getOriginWriteList().length < 1) {
+        if (null == securityCsrfConfigProperty.getOriginIgnorePath() || securityCsrfConfigProperty.getOriginWhiteList().length < 1) {
             return (vHeaderValue.indexOf("https://" + pRequest.getServerName()) >= 0 || vHeaderValue.indexOf("http://" + pRequest.getServerName()) >= 0);
         }
 
         //白名单对比
         else {
-            for (String vItem : securityCsrfConfigProperty.getRefererWriteList()) {
+            for (String vItem : securityCsrfConfigProperty.getRefererWhiteList()) {
                 if (vHeaderValue.indexOf(vItem) >= 0) {
                     return true;
                 }
