@@ -94,12 +94,12 @@ public class SqlInjectionFilter extends OncePerRequestFilter {
             return;
         }
 
-        if (StringUtil.contains(pRequest.getContentType(), MimeTypeUtils.APPLICATION_JSON.toString())) {
+        if (Objects.nonNull(pRequest.getContentType()) && StringUtil.contains(pRequest.getContentType(), MimeTypeUtils.APPLICATION_JSON.toString())) {
             if (!(pRequest instanceof JsonHttpServletRequestWrapper)) {
                 pRequest = new JsonHttpServletRequestWrapper(pRequest);
             }
             validJsonParam((JsonHttpServletRequestWrapper) pRequest, pResponse);
-        } else if (StringUtil.contains(pRequest.getContentType(), "application/x-www-form-urlencoded")) {
+        } else if (Objects.nonNull(pRequest.getContentType()) && StringUtil.contains(pRequest.getContentType(), "application/x-www-form-urlencoded")) {
             validUrlEncoded(pRequest, pResponse);
         }
 

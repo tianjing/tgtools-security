@@ -10,6 +10,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
 import java.io.*;
 import java.nio.charset.Charset;
+import java.util.Objects;
 
 /**
  * @author 田径
@@ -47,7 +48,7 @@ public class JsonHttpServletRequestWrapper extends HttpServletRequestWrapper {
     @Override
     public ServletInputStream getInputStream() throws IOException {
         if (null == inputStream) {
-            if (this.getContentType().contains(MimeTypeUtils.APPLICATION_JSON_VALUE)) {
+            if (Objects.nonNull(this.getContentType()) && this.getContentType().contains(MimeTypeUtils.APPLICATION_JSON_VALUE)) {
                 String vContent = getRequestBody(super.getInputStream());
                 requestJsonBody = vContent;
                 inputStream = new ByteArrayServletInputStream(new ByteArrayInputStream(vContent.getBytes("UTF-8")));

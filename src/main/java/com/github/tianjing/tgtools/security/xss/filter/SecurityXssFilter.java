@@ -91,13 +91,13 @@ public class SecurityXssFilter extends OncePerRequestFilter {
         }
 
 
-        if (pRequest.getContentType().contains(MimeTypeUtils.APPLICATION_JSON_VALUE)) {
+        if (Objects.nonNull(pRequest.getContentType()) && pRequest.getContentType().contains(MimeTypeUtils.APPLICATION_JSON_VALUE)) {
             if(!(pRequest instanceof JsonHttpServletRequestWrapper)) {
                 pRequest = new JsonHttpServletRequestWrapper(pRequest);
             }
             String vContent = ((JsonHttpServletRequestWrapper) pRequest).getRequestJsonBody();
             validContent(vContent, pRequest, pResponse);
-        } else if (pRequest.getContentType().contains("application/x-www-form-urlencoded")) {
+        } else if (Objects.nonNull(pRequest.getContentType()) &&  pRequest.getContentType().contains("application/x-www-form-urlencoded")) {
             validUrlEncoded(pRequest, pResponse);
         }
 
