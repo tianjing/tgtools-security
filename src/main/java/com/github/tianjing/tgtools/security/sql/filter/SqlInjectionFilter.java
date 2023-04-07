@@ -98,80 +98,99 @@ public class SqlInjectionFilter extends OncePerRequestFilter {
             if (!(pRequest instanceof JsonHttpServletRequestWrapper)) {
                 pRequest = new JsonHttpServletRequestWrapper(pRequest);
             }
-            validJsonParam((JsonHttpServletRequestWrapper) pRequest, pResponse);
+            if (!validJsonParam((JsonHttpServletRequestWrapper) pRequest, pResponse)) {
+                return;
+            }
         } else if (Objects.nonNull(pRequest.getContentType()) && StringUtil.contains(pRequest.getContentType(), "application/x-www-form-urlencoded")) {
-            validUrlEncoded(pRequest, pResponse);
+            if (!validUrlEncoded(pRequest, pResponse)) {
+                return;
+            }
         }
 
         pFilterChain.doFilter(pRequest, pResponse);
     }
 
-    protected void validJsonParam(JsonHttpServletRequestWrapper pRequest, HttpServletResponse pResponse) throws ServletException, IOException {
+    protected boolean validJsonParam(JsonHttpServletRequestWrapper pRequest, HttpServletResponse pResponse) throws ServletException, IOException {
         JsonNode vJson = pRequest.getRequestJsonNode();
         if (Objects.isNull(vJson)) {
-            return;
+            return true;
         }
+
+        boolean vResult = true;
 
         if (vJson.isObject()) {
-            validJsonObject((ObjectNode) vJson, pRequest, pResponse);
+            vResult = validJsonObject((ObjectNode) vJson, pRequest, pResponse);
         }
         if (vJson.isArray()) {
-            validJsonArray((ArrayNode) vJson, pRequest, pResponse);
+            vResult = validJsonArray((ArrayNode) vJson, pRequest, pResponse);
         }
+        return vResult;
     }
 
-    protected void validJsonObject(ObjectNode pJson, HttpServletRequest pRequest, HttpServletResponse pResponse) throws ServletException, IOException {
+    protected boolean validJsonObject(ObjectNode pJson, HttpServletRequest pRequest, HttpServletResponse pResponse) throws ServletException, IOException {
         if (Objects.isNull(pJson)) {
-            return;
+            return true;
         }
         Iterator<String> vNames = pJson.fieldNames();
+        boolean vResult = true;
+
         while (vNames.hasNext()) {
             String vName = vNames.next();
             JsonNode vValue = pJson.get(vName);
             if (vValue.isObject()) {
-                validJsonObject((ObjectNode) vValue, pRequest, pResponse);
+                vResult = validJsonObject((ObjectNode) vValue, pRequest, pResponse);
             } else if (vValue.isArray()) {
-                validJsonArray((ArrayNode) vValue, pRequest, pResponse);
+                vResult = validJsonArray((ArrayNode) vValue, pRequest, pResponse);
             } else if (vValue.isTextual()) {
-                validContent(vValue.toString(), pRequest, pResponse);
+                vResult = validContent(vValue.toString(), pRequest, pResponse);
             } else {
                 continue;
             }
+            if (!vResult) {
+                return vResult;
+            }
         }
-
-
+        return vResult;
     }
 
-    protected void validJsonArray(ArrayNode pJson, HttpServletRequest pRequest, HttpServletResponse pResponse) throws ServletException, IOException {
+    protected boolean validJsonArray(ArrayNode pJson, HttpServletRequest pRequest, HttpServletResponse pResponse) throws ServletException, IOException {
         if (Objects.isNull(pJson)) {
-            return;
+            return true;
         }
+        boolean vResult = true;
         for (JsonNode vJson : pJson) {
             if (vJson.isObject()) {
-                validJsonObject((ObjectNode) vJson, pRequest, pResponse);
+                vResult = validJsonObject((ObjectNode) vJson, pRequest, pResponse);
             } else if (vJson.isArray()) {
-                validJsonArray((ArrayNode) vJson, pRequest, pResponse);
+                vResult = validJsonArray((ArrayNode) vJson, pRequest, pResponse);
             } else if (vJson.isTextual()) {
-                validContent(vJson.toString(), pRequest, pResponse);
+                vResult = validContent(vJson.toString(), pRequest, pResponse);
             } else {
                 continue;
             }
+            if (!vResult) {
+                return vResult;
+            }
         }
-
+        return vResult;
     }
 
-    protected void validContent(String pContent, HttpServletRequest pRequest, HttpServletResponse pResponse) throws ServletException, IOException {
+    protected boolean validContent(String pContent, HttpServletRequest pRequest, HttpServletResponse pResponse) throws ServletException, IOException {
         if (!this.sqlInjectionProcess.validTextFiledContent(pContent)) {
             this.sqlInjectionProcess.getAccessDeniedHandler().handle(pRequest, pResponse,
                     new ErrorRefererException(getErrorMessage()));
+            return false;
         }
+        return true;
     }
 
-    protected void validUrlEncoded(HttpServletRequest pRequest, HttpServletResponse pResponse) throws ServletException, IOException {
+    protected boolean validUrlEncoded(HttpServletRequest pRequest, HttpServletResponse pResponse) throws ServletException, IOException {
         Map<String, String[]> vParameterMap = pRequest.getParameterMap();
         if (Objects.isNull(vParameterMap) || vParameterMap.size() < 1) {
-            return;
+            return true;
         }
+
+        boolean vResult = true;
 
         for (Map.Entry<String, String[]> vItem : vParameterMap.entrySet()) {
             if (Objects.isNull(vItem.getValue()) || vItem.getValue().length < 1) {
@@ -179,10 +198,14 @@ public class SqlInjectionFilter extends OncePerRequestFilter {
             }
 
             for (String vValue : vItem.getValue()) {
-                validContent(vValue, pRequest, pResponse);
+                vResult = validContent(vValue, pRequest, pResponse);
+            }
+
+            if (!vResult) {
+                return vResult;
             }
         }
-
+        return true;
     }
 
     public static class ErrorRefererException extends CsrfException {
