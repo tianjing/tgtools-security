@@ -6,7 +6,7 @@
 
     <groupId>com.github.tianjing</groupId>
     <artifactId>tgtools-security</artifactId>
-    <version>1.0.5</version>
+    <version>1.0.6</version>
 
     <name>${project.groupId}:${project.artifactId}</name>
     <url>https://github.com/tianjing/tgtools-security</url>

@@ -11,7 +11,6 @@ import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.util.MimeTypeUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
-import tgtools.util.StringUtil;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
@@ -92,13 +91,17 @@ public class SecurityXssFilter extends OncePerRequestFilter {
 
 
         if (Objects.nonNull(pRequest.getContentType()) && pRequest.getContentType().contains(MimeTypeUtils.APPLICATION_JSON_VALUE)) {
-            if(!(pRequest instanceof JsonHttpServletRequestWrapper)) {
+            if (!(pRequest instanceof JsonHttpServletRequestWrapper)) {
                 pRequest = new JsonHttpServletRequestWrapper(pRequest);
             }
             String vContent = ((JsonHttpServletRequestWrapper) pRequest).getRequestJsonBody();
-            validContent(vContent, pRequest, pResponse);
-        } else if (Objects.nonNull(pRequest.getContentType()) &&  pRequest.getContentType().contains("application/x-www-form-urlencoded")) {
-            validUrlEncoded(pRequest, pResponse);
+            if (!validContent(vContent, pRequest, pResponse)) {
+                return;
+            }
+        } else if (Objects.nonNull(pRequest.getContentType()) && pRequest.getContentType().contains("application/x-www-form-urlencoded")) {
+            if (!validUrlEncoded(pRequest, pResponse)) {
+                return;
+            }
         }
 
         pFilterChain.doFilter(pRequest, pResponse);
@@ -106,29 +109,34 @@ public class SecurityXssFilter extends OncePerRequestFilter {
 
     }
 
-    protected void validUrlEncoded(HttpServletRequest pRequest, HttpServletResponse pResponse) throws ServletException, IOException {
+    protected boolean validUrlEncoded(HttpServletRequest pRequest, HttpServletResponse pResponse) throws ServletException, IOException {
         Map<String, String[]> vParameterMap = pRequest.getParameterMap();
         if (Objects.isNull(vParameterMap) || vParameterMap.size() < 1) {
-            return;
+            return true;
         }
-
+        boolean vResult = true;
         for (Map.Entry<String, String[]> vItem : vParameterMap.entrySet()) {
             if (Objects.isNull(vItem.getValue()) || vItem.getValue().length < 1) {
                 continue;
             }
 
             for (String vValue : vItem.getValue()) {
-                validContent(vValue, pRequest, pResponse);
+                vResult = validContent(vValue, pRequest, pResponse);
+            }
+            if (!vResult) {
+                return vResult;
             }
         }
-
+        return true;
     }
 
-    protected void validContent(String pContent, HttpServletRequest pRequest, HttpServletResponse pResponse) throws ServletException, IOException {
+    protected boolean validContent(String pContent, HttpServletRequest pRequest, HttpServletResponse pResponse) throws ServletException, IOException {
         if (!this.securityXssFilterProcess.validTextFiledContent(pContent)) {
             this.securityXssFilterProcess.getAccessDeniedHandler().handle(pRequest, pResponse,
                     new SqlInjectionFilter.ErrorRefererException(getErrorMessage()));
+            return false;
         }
+        return true;
     }
 
 }
